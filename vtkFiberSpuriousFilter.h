@@ -22,13 +22,6 @@
 #include <vtkCallbackCommand.h>
 #include <vtkSmartPointer.h>
 
-/** Includes - Qt */
-
-#include <QMap>
-#include <QString>
-#include <QDebug>
-#include <QFileInfo>
-
 /** Includes - Custom Files */
 
 #include "SpuriousFiberFilterTypes.h"

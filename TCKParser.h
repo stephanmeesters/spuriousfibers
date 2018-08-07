@@ -18,14 +18,7 @@
 #include <vtkTransform.h>
 #include <vtkAlgorithm.h>
 
-/** Includes - Qt */
-
-#include <QFile>
-#include <QByteArray>
-#include <QMatrix4x4>
-
 /** Includes - C++ */
-
 #include <iostream>
 #include <fstream>
 #include <assert.h>

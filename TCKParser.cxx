@@ -39,7 +39,7 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
     }
     
     double inf=1.0/0.0;
-    QList< QList<float> > fibersList;
+    std::vector< std::vector<float> > fibersList;
     
     int headerPos = TCKFile.tellg();
     int bugfixer = 0;
@@ -73,7 +73,7 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
         {
             //algo->UpdateProgress((double) j);
             
-            QList<float> fiber;
+            std::vector<float> fiber;
             
             float f1,f2,f3;
             k = 0;
@@ -102,9 +102,9 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
                 //                f3 += 60;
                 //                f3 *= 0.5;
                 
-                fiber.append(f1);
-                fiber.append(f2);
-                fiber.append(f3);
+                fiber.push_back(f1);
+                fiber.push_back(f2);
+                fiber.push_back(f3);
                 
                 k++;
                 
@@ -120,7 +120,7 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
                 break;
             }
             
-            fibersList.append(fiber);
+            fibersList.push_back(fiber);
             
             j++;
             
@@ -180,12 +180,12 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
     
     // Loop over pathways
     int counter = 0;
-    int numPathways = fibersList.length();
+    int numPathways = fibersList.size();
     for(int i = 0; i < numPathways; i++)
     {
-        QList<float> fiber = fibersList.at(i);
+        std::vector<float> fiber = fibersList.at(i);
         
-        int numberOfFiberPoints = fiber.length()/3;
+        int numberOfFiberPoints = fiber.size()/3;
         
         // Create a cell representing a fiber
         outputLines->InsertNextCell(numberOfFiberPoints);
@@ -202,7 +202,7 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
     
     // todo: cleanup vars
     
-    printf("Fibers loaded succesfully. Nr of fibers=%d\n",fibersList.length());
+    printf("Fibers loaded succesfully. Nr of fibers=%d\n",(int)fibersList.size());
     
     // return the output PolyData
     return output;

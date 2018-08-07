@@ -11,15 +11,6 @@
 /** Includes - TCLAP */
 #include "tclap/CmdLine.h"
 
-/** Includes - Qt */
-#include <QApplication>
-#include <QMainWindow>
-#include <QMap>
-#include <QPalette>
-#include <QPixmap>
-#include <QSplashScreen>
-#include <QFileInfo>
-
 /** Includes -- project */
 #include "TCKParser.h"
 #include "vtkFiberSelectAnterior.h"
@@ -39,12 +30,10 @@ void SpuriousFibers(ParameterSettings* ps)
     // load fibers
     printf("Loading fibers from dataset: %s \n",ps->inputFile.c_str());
     
-    QString infile = QString::fromStdString(ps->inputFile);
-    QFileInfo infileInfo = QFileInfo(infile);
-    
+    std::string fn = ps->inputFile;    
     vtkPolyData* polydata = NULL;
     // parse TCK if file if .tck
-    if(infileInfo.suffix() == QString("tck"))
+    if(fn.substr(fn.find_last_of(".") + 1) == "tck")
     {
         polydata = TCKParser::LoadDataFromFile(ps->inputFile);
     }

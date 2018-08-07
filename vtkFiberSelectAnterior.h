@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <map>
 
 /** Includes - VTK */
 
@@ -23,10 +24,6 @@
 #include <vtkImageCast.h>
 #include <vtkObject.h>
 #include <vtkMatrix4x4.h>
-
-/** Includes - Qt */
-
-#include <QMap>
 
 
 class vtkFiberSelectAnterior : public vtkPolyDataAlgorithm

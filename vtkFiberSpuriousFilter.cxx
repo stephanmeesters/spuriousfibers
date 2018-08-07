@@ -514,13 +514,13 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     //
 
     // Prepare scalars list
-    QList<vtkDoubleArray*> outputScalarsList;
+    std::vector<vtkDoubleArray*> outputScalarsList;
     int numberOfScalarTypes = inputPD->GetNumberOfArrays();
     for(int i = 0; i < numberOfScalarTypes; i++)
     {
         vtkDoubleArray* outputScalars = vtkDoubleArray::New();
         outputScalars->SetName(inputPD->GetArray(i)->GetName());
-        outputScalarsList.append(outputScalars);
+        outputScalarsList.push_back(outputScalars);
     }
 
     // Add new scalar list for SM
@@ -835,8 +835,8 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
         // compute remaining time
         clock_t newTime = clock();
-        QString progtext = QString("Filtering fibers... (time remaining = %1 seconds)").arg(int(double(newTime - lastTime) / CLOCKS_PER_SEC * (numberOfCells - lineId)));
-        this->SetProgressText(progtext.toLocal8Bit().data());
+        //std::vector progtext = QString("Filtering fibers... (time remaining = %1 seconds)").arg(int(double(newTime - lastTime) / CLOCKS_PER_SEC * (numberOfCells - lineId)));
+        //this->SetProgressText(progtext.toLocal8Bit().data());
         lastTime = newTime;
 
         //if(this->GetAbortExecute())

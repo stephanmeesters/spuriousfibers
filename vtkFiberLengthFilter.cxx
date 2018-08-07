@@ -79,13 +79,13 @@ int vtkFiberLengthFilter::RequestData(vtkInformation *vtkNotUsed(request),
     }
     
     // Get list of scalars
-    QList<vtkDoubleArray*> outputScalarsList;
+    std::vector<vtkDoubleArray*> outputScalarsList;
     int numberOfScalarTypes = inputPD->GetNumberOfArrays();
     for(int i = 0; i < numberOfScalarTypes; i++)
     {
         vtkDoubleArray* outputScalars = vtkDoubleArray::New();
         outputScalars->SetName(inputPD->GetArray(i)->GetName());
-        outputScalarsList.append(outputScalars);
+        outputScalarsList.push_back(outputScalars);
     }
     
     // Create a point set for the output
@@ -112,7 +112,7 @@ int vtkFiberLengthFilter::RequestData(vtkInformation *vtkNotUsed(request),
     bool applyMin = fiberLengthMin > 0;
     bool applyMax = fiberLengthMax > 0;
     
-    QMap<double, vtkIdType> fiberMap;
+    std::map<double, vtkIdType> fiberMap;
     // Loop through all input fibers and get anterior distance
     for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
     {

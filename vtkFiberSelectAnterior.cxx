@@ -79,13 +79,13 @@ int vtkFiberSelectAnterior::RequestData(vtkInformation *vtkNotUsed(request),
     }
     
     // Get list of scalars
-    QList<vtkDoubleArray*> outputScalarsList;
+    std::vector<vtkDoubleArray*> outputScalarsList;
     int numberOfScalarTypes = inputPD->GetNumberOfArrays();
     for(int i = 0; i < numberOfScalarTypes; i++)
     {
         vtkDoubleArray* outputScalars = vtkDoubleArray::New();
         outputScalars->SetName(inputPD->GetArray(i)->GetName());
-        outputScalarsList.append(outputScalars);
+        outputScalarsList.push_back(outputScalars);
     }
     
     // Create a point set for the output
@@ -109,7 +109,7 @@ int vtkFiberSelectAnterior::RequestData(vtkInformation *vtkNotUsed(request),
     this->SetProgressText("Selecting anterior fibers...");
     this->UpdateProgress(0.0);
     
-    QMap<double, vtkIdType> fiberMap;
+    std::map<double, vtkIdType> fiberMap;
     // Loop through all input fibers and get anterior distance
     for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
     {
@@ -146,12 +146,12 @@ int vtkFiberSelectAnterior::RequestData(vtkInformation *vtkNotUsed(request),
         }
         
         // Add the fiber ID and the CM value to the map
-        fiberMap.insert(maxAnterior, lineId);
+        fiberMap.insert( std::pair<double, vtkIdType>(maxAnterior, lineId) );
         //printf("LINE: %f %d \n",maxAnterior,(int)lineId);
     }
     
     int rFiberIndex = 0;
-    QMap<double, vtkIdType>::iterator rIter = fiberMap.end();
+    std::map<double, vtkIdType>::iterator rIter = fiberMap.end();
     
     while (rIter != fiberMap.begin())
     {
@@ -165,7 +165,7 @@ int vtkFiberSelectAnterior::RequestData(vtkInformation *vtkNotUsed(request),
         }
         
         // Get the ID of the current fiber
-        vtkIdType currentFiberId = rIter.value();
+        vtkIdType currentFiberId = rIter->second;
         
         // Get the data of the current fiber
         vtkCell * currentCell = input->GetCell(currentFiberId);

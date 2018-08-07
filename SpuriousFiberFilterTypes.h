@@ -4,7 +4,7 @@
 /** Holding parameter settings */
 typedef struct
 {
-    QString outputFiberDataName;
+    std::string outputFiberDataName;
 
     double D33;
     double D44;
