@@ -638,6 +638,7 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     // copy fiber data and compute tangents
     fiberData = (double*)malloc(totalNumPoints*sizeOfDouble3);   // x y z
     fiberTangents = (double*)malloc(totalNumPoints*sizeOfDouble3);   // dx dy dz
+	#pragma omp parallel for
     for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
     {
         // Get the data of the current fiber
@@ -694,8 +695,7 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     clock_t lastTime = clock();
 
 
-    //omp_set_dynamic(0);     // Explicitly disable dynamic teams
-    //omp_set_num_threads(4); // Use 4 threads for all consecutive parallel regions
+   
 
     // prepare cache to utilise kernel associative property ab=ba where a,b in R3/S2
     //int* cacheIndices = (int*)malloc(totalNumPoints*2*sizeof(int)); // number of unique connections
@@ -713,6 +713,7 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     //if(fiberScores != NULL)
     //    free(fiberScores);
     fiberScores = (double*)malloc(totalNumPoints*sizeOfDouble1);
+	#pragma omp parallel for
     for (int lineId = 0; lineId < numberOfCells; ++lineId)
     {
         // Update the progress bar

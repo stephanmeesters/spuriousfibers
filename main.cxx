@@ -25,6 +25,11 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataReader.h>
 
+/** Includes - OMP */
+#ifdef WITH_OPENMP
+	#include <omp.h>
+#endif
+
 void SpuriousFibers(ParameterSettings* ps)
 {
     // load fibers
@@ -220,6 +225,12 @@ int main(int argc, const char * argv[])
                                                  false,
                                                  15,
                                                  "Kernel distance cutoff");
+		TCLAP::ValueArg<float> param_nthreads("",
+                                                 "nthreads",
+                                                 "Number of threads for multicore processing: 1",
+                                                 false,
+                                                 1,
+                                                 "Number of threads");
         TCLAP::SwitchArg param_verbose("","verbose","Verbose mode",false);
         
         cmd.add( param_minlength);
@@ -234,6 +245,7 @@ int main(int argc, const char * argv[])
         cmd.add( param_d33 );
         cmd.add( path_output );
         cmd.add( path_tck );
+		cmd.add( param_nthreads );
         
         // Parse the args.
         cmd.parse( argc, argv );
@@ -256,6 +268,12 @@ int main(int argc, const char * argv[])
         ps->maxLength = param_maxlength.getValue();
         ps->minLength = param_minlength.getValue();
         ps->applyFilterLength = ps->maxLength > 0 || ps->minLength > 0;
+
+		// OpenMP settings
+#ifdef WITH_OPENMP
+ 		omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    	omp_set_num_threads(param_nthreads.getValue()); // Use 4 threads for all consecutive parallel regions
+#endif
         
         // Run spurious fiber filter
         SpuriousFibers(ps);

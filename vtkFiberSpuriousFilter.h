@@ -5,7 +5,6 @@
 #include <fstream>
 
 /** Includes - VTK */
-
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkPolyData.h>
 #include <vtkObjectFactory.h>
@@ -23,8 +22,12 @@
 #include <vtkSmartPointer.h>
 
 /** Includes - Custom Files */
-
 #include "SpuriousFiberFilterTypes.h"
+
+/** Includes - OMP */
+#ifdef WITH_OPENMP
+	#include <omp.h>
+#endif
 
 #define PI 3.14159265358
 #define PISQUARED 9.86960440109
