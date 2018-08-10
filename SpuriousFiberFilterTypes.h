@@ -15,6 +15,7 @@ typedef struct
     double cutoff;
     int maxLength;
     int minLength;
+int windowSize;
 
     // saved results
     double avgScoreTotal;
@@ -34,6 +35,7 @@ typedef struct
     
     std::string inputFile;
     std::string outputFile;
+	std::string outputScalarsFile;
 
 } ParameterSettings;
 

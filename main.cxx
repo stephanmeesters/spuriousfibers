@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <fstream>
 
 /** Includes - TCLAP */
 #include "tclap/CmdLine.h"
@@ -24,6 +25,7 @@
 #include <vtkPolyDataWriter.h>
 #include <vtkSmartPointer.h>
 #include <vtkPolyDataReader.h>
+#include <vtkArrayWriter.h>
 
 /** Includes - OMP */
 #ifdef WITH_OPENMP
@@ -142,15 +144,46 @@ void SpuriousFibers(ParameterSettings* ps)
     scoringFilter->SetParameters(ps);
     scoringFilter->Update();
     printf("Scoring complete.\n");
+
+	vtkPolyData* outdata = scoringFilter->GetOutput();
     
     // Write the results
     vtkPolyDataWriter * writer = vtkPolyDataWriter::New();
     writer->SetFileName(ps->outputFile.c_str());
-    writer->SetInputData(scoringFilter->GetOutput());
-    writer->SetFileTypeToASCII();
+    writer->SetInputData(outdata);
+    writer->SetFileTypeToBinary();
     writer->Write();
     writer->Delete();
     printf("Results written to %s.\n",ps->outputFile.c_str());
+
+	// Write scalars to text file
+	//if(!ps->outputScalarsFile.empty())
+	//{
+	/*ofstream outputFile;
+	outputFile.open(ps->outputScalarsFile);
+
+	int numberOfCells = outdata->GetNumberOfCells();
+
+	for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
+		{
+		    // Get the data of the current fiber
+		    vtkCell * currentCell = input->GetCell(lineId);
+		    int numberOfFiberPoints = currentCell->GetNumberOfPoints();
+			double scalarValue = 
+
+		    // Loop through all points in the fiber
+			for (int pointId = 0; pointId < numberOfFiberPoints; ++pointId)
+			{
+	outputFile << 
+	}
+	}
+
+	outputFile.close();*/
+
+	//vtkArrayWriter* writer2 = vtkArrayWriter::New();
+	//writer2->Write(outdata->GetPointData()->GetArray("SMScalars"), ps->outputScalarsFile.c_str());
+	
+	//}
 }
 
 int main(int argc, const char * argv[])
@@ -171,6 +204,12 @@ int main(int argc, const char * argv[])
                                               true,
                                               "",
                                               "Path to output .vtk file");
+		TCLAP::ValueArg<std::string> path_output_scalars("",
+                                              "output-scalars",
+                                              "Path to the output .txt or .tsf file",
+                                              false,
+                                              "",
+                                              "Path to output .txt or .tsf file");
         TCLAP::ValueArg<float> param_d33("",
                                               "d33",
                                               "Value of D33 parameter. Default value: 1.0",
@@ -231,6 +270,12 @@ int main(int argc, const char * argv[])
                                                  false,
                                                  1,
                                                  "Number of threads");
+		TCLAP::ValueArg<int> param_windowsize("",
+                                                 "windowsize",
+                                                 "Size of the window for RFBC",
+                                                 false,
+                                                 7,
+                                                 "NSize of the window for RFBC");
         TCLAP::SwitchArg param_verbose("","verbose","Verbose mode",false);
         
         cmd.add( param_minlength);
@@ -244,8 +289,10 @@ int main(int argc, const char * argv[])
         cmd.add( param_d44 );
         cmd.add( param_d33 );
         cmd.add( path_output );
+		cmd.add( path_output_scalars );
         cmd.add( path_tck );
 		cmd.add( param_nthreads );
+cmd.add( param_windowsize);
         
         // Parse the args.
         cmd.parse( argc, argv );
@@ -264,10 +311,12 @@ int main(int argc, const char * argv[])
         ps->minDist = param_mindist.getValue();
         ps->inputFile = path_tck.getValue();
         ps->outputFile = path_output.getValue();
+		ps->outputScalarsFile = path_output_scalars.getValue();
         ps->cutoff = 3.5;
         ps->maxLength = param_maxlength.getValue();
         ps->minLength = param_minlength.getValue();
         ps->applyFilterLength = ps->maxLength > 0 || ps->minLength > 0;
+ps->windowSize = param_windowsize.getValue();
 
 		// OpenMP settings
 #ifdef WITH_OPENMP

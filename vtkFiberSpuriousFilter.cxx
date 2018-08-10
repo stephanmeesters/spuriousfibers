@@ -542,14 +542,6 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     //      PROCESS
     //
 
-   // using namespace std;
-   // char* textname = (QString("/home/linux/Stephan/%1.txt").arg(ps->outputFiberDataName)).toStdString().c_str();
-
-//   QFileInfo asdd(ps->outputFiberDataName);
-//   QString asd = QString("/home/linux/Stephan/FIBER_TO_BUNDLE_COHERENCE/output/%1.txt").arg(asdd.fileName());
-//    qDebug() << asd;
-//    ofstream dataFile(asd.toLocal8Bit().constData());
-
 	// Number of points in the current fiber, and a list of its point IDs
 	vtkIdType numberOfPoints;
 	vtkIdType * pointList;
@@ -567,51 +559,7 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     double* fiberData;
     double* fiberTangents;
     double* fiberMinScores = ps->fiberMinScores;
-    this->cutoffSquared = ps->cutoff;//*ps->cutoff;
-
-
-    // precompute the kernel
-//    int numOrientations = 162;
-//    int dims = 15;
-//    double dimStep = 0.5;
-//    int N = dims/dimStep;
-//    this->SetProgressText("Precomputing the kernel...");
-//    this->UpdateProgress(0.0);
-//    int c = 0;
-//    for(int i = 0; i<numOrientations; i++)
-//    {
-//        if ((i % 5) == 0)
-//        {
-//            this->UpdateProgress((double) i / (double) numOrientations);
-//        }
-//
-//        double* arg2 = EulerAngles(&orientations[i]);
-//
-//        for(double x = 0; x<dims; x+=dimStep)
-//        {
-//            for(double y = 0; y<dims; y+=dimStep)
-//            {
-//                for(double z = 0; z<dims; z+=dimStep)
-//                {
-//                    double kernelval = kernel(x,
-//                                              y,
-//                                              z,
-//                                              arg2[0],
-//                                              arg2[1],
-//                                              this->ps->D33, this->ps->D44, this->ps->t);
-//                    kernelOutput[c] = kernelval;
-//                    c++;
-//
-//                }
-//            }
-//        }
-//        free(arg2);
-//    }
-
-
-    //double* x, double* y, double* r, double* v)
-
-
+    this->cutoffSquared = ps->cutoff;
 
     this->SetProgressText("Filtering fibers...");
     this->UpdateProgress(0.0);
@@ -694,9 +642,6 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
     clock_t lastTime = clock();
 
-
-   
-
     // prepare cache to utilise kernel associative property ab=ba where a,b in R3/S2
     //int* cacheIndices = (int*)malloc(totalNumPoints*2*sizeof(int)); // number of unique connections
     double* cacheValues = (double*)malloc(totalNumPoints*totalNumPoints*sizeof(double)); // diagonally symmetric matrix of output values
@@ -704,16 +649,11 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     printf("total num points: %d \n",totalNumPoints);
 
     // default kernel value at origin
-
     kernelDefault = kernel(0,0,0,0,0, this->ps->D33, this->ps->D44, this->ps->t);
     printf("kernel default value: %f\n",kernelDefault);
-    //return;
 
     // Compute kernel for fibers
-    //if(fiberScores != NULL)
-    //    free(fiberScores);
     fiberScores = (double*)malloc(totalNumPoints*sizeOfDouble1);
-	#pragma omp parallel for
     for (int lineId = 0; lineId < numberOfCells; ++lineId)
     {
         // Update the progress bar
@@ -777,39 +717,20 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
                         tangentf2 = fiberTangents + id2;
 
                         double sval = 0.0;
-                        // is a cached result available?
-//                            if(id22 < id11)
-//                            {
-//                                printf("request at: (%d,%d):%d of max:%dx%d=%d\n",id11,id22,id11*totalNumPoints+id22,totalNumPoints,totalNumPoints,totalNumPoints*totalNumPoints);
-//                                sval = cacheValues[id11*totalNumPoints+id22];
-//                                sfac1++;
-//                            }
-//
-//                            // if not, compute the kernel
-//                            else
-//                            {
                             // check distance
                             if(Norm(Subtract3(p,pf2)) < minDistSquared)
                             //if(Norm(Subtract3(p,pf2)) + 10.0*Norm(Subtract3(tangent, tangentf2)) < minDistSquared)
                             {
                                 // evaluate kernel
-                                //printf("forward: %f  backward:%f \n",k2(p,pf2,tangent,tangentf2),k2(pf2,p,tangent,tangentf2));
                                 sval = k2(p,pf2,tangent,tangentf2);
 
                                 // flipped kernel and take largest response
                                 if(ps->applyKernelInBothDirs)
                                 {
                                     double sval2 = k2(p,pf2,tangentFlipped,tangentf2);
-                                    //if(sval2 > sval)
-                                        //sval = sval2;
-                                    sval = sval + sval2;
+                                    sval += sval2;
                                 }
-
-                                //printf("fill at: (%d,%d):%d of max:%dx%d=%d\n",id1,id2,id1*totalNumPoints+id2,totalNumPoints,totalNumPoints,totalNumPoints*totalNumPoints);
-                                //cacheValues[id11*totalNumPoints+id22] = sval;
                             }
-//                            }
-//                            sfac2++;
 
                         // add scoring value. check against NaN
                         if(!(sval!=sval))
@@ -821,7 +742,6 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
                 // sum individual scorings
                 for(int i = 0; i<numberOfCells; i++)
                 {
-                    //dataFile << scoringResults[i] << "\n";
                     fscore += scoringResults[i];
                 }
                 free(scoringResults);
@@ -833,19 +753,83 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
             fiberScores[fiberStartId/3 + pointId] = fscore;
 
         }
-
-        // compute remaining time
-        clock_t newTime = clock();
-        //std::vector progtext = QString("Filtering fibers... (time remaining = %1 seconds)").arg(int(double(newTime - lastTime) / CLOCKS_PER_SEC * (numberOfCells - lineId)));
-        //this->SetProgressText(progtext.toLocal8Bit().data());
-        lastTime = newTime;
-
-        //if(this->GetAbortExecute())
-        //    return;
     }
 
+		// compute the RFBC
+		double avgScoreTotal = 0.0;
+		for (int lineId = 0; lineId < numberOfCells; ++lineId)
+			{
+				 // Get the data of the current fiber
+				int numberOfFiberPoints = fiberNumPoints[lineId];
+
+				double avgScoreLocal = 0.0;
+				// Loop through all points in the fiber
+				for (int pointId = 0; pointId < numberOfFiberPoints; ++pointId)
+				{
+					avgScoreLocal += fiberScores[pointId];
+				}
+				avgScoreLocal /= numberOfFiberPoints;
+				avgScoreTotal += avgScoreLocal;
+		}        
+        avgScoreTotal /= numberOfCells;
+
+        if(fiberMinScores != NULL)
+           free(fiberMinScores);
+        fiberMinScores = (double*)malloc(numberOfCells*sizeof(double));
+        for (int lineId = 0; lineId < numberOfCells; ++lineId)
+        {
+            int numberOfFiberPoints = fiberNumPoints[lineId];
+
+			if(numberOfFiberPoints <= ps->windowSize)
+			{
+				fiberMinScores[lineId] = 0.0;
+				continue;
+}
+
+            // Loop through all points in the fiber within the window
+            // skip first point due to irrelevant score
+            int windowStart = 1;
+
+            // Current point coordinates
+            int fiberStartId = fiberStartIds[lineId];
+
+            double minScore = 1e99;
+            //double avgScore = 0.0;
+
+            while(true)
+            {
+                int windowEnd = windowStart + ps->windowSize - 1;
+                if(windowEnd >= numberOfFiberPoints - 1)
+                    break;
+
+                double windowSum = 0.0;
+                for (int pointId = windowStart; pointId <= windowEnd; ++pointId)
+                {
+                    double score = fiberScores[fiberStartId/3 + pointId];
+                    windowSum += score;
+                }
+
+                windowSum /= windowEnd - windowStart + 1;
+
+                if(windowSum < minScore)
+                    minScore = windowSum;
+
+                windowStart++;
+            }
+
+			if(minScore > 1e10)
+				minScore = 0.0;
+			else if(minScore < 1e-4)
+				minScore = 0.0;
+
+            fiberMinScores[lineId] = minScore / avgScoreTotal;
+        }
+
+        
+
+
+
     free(cacheValues);
-    //printf("speedup factor: %f\n",(double)sfac1/sfac2);
 
     free(fiberData);
     free(fiberNumPoints);
@@ -856,6 +840,12 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     ps->fiberMinScores = fiberMinScores;
     
     /** END COMPUTE **/
+
+	ofstream outputFile;
+	if(!ps->outputScalarsFile.empty())
+{
+	outputFile.open(ps->outputScalarsFile);
+}
 
 	// save fiber results
 	for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
@@ -890,30 +880,23 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
             vtkIdType newPointId = outputPoints->InsertNextPoint(p);
             newFiberList->InsertNextId(newPointId);
 
-            // include old scalar values
-//            for(int i = 0; i < numberOfScalarTypes; i++)
-//            {
-//                // Get the scalar value
-//                double scalar = inputPD->GetArray(i)->GetTuple1(currentPointId);
-//
-//                // Copy the scalar value to the output
-//                outputScalarsList.at(i)->InsertNextTuple1(scalar);
-//            }
-
             // include new scoring
             SMScalars->InsertNextTuple1(fiberScores[fiberStartId/3 + pointId]);
 		}
+
+	if(!ps->outputScalarsFile.empty())
+{
+outputFile << fiberMinScores[lineId] << "\n";
+}
 
 		// Add the new fiber to the output
 		outputLines->InsertNextCell(newFiberList);
 	}
 
-	// Add scalar arrays
-//	for(int i = 0; i < numberOfScalarTypes; i++)
-//    {
-//        vtkDoubleArray* outputScalars = outputScalarsList.at(i);
-//        output->GetPointData()->AddArray(outputScalars);
-//    }
+	if(!ps->outputScalarsFile.empty())
+{
+	outputFile.close();
+}
 
     // Add SM scalar array
     output->GetPointData()->AddArray(SMScalars);
@@ -922,8 +905,6 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
 	// Finalize the progress bar
 	this->UpdateProgress(1.0);
     this->ps->requireRecompute = false;
-
-    //dataFile.close();
     
     return 1;
 }
