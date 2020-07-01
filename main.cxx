@@ -46,14 +46,15 @@ void SpuriousFibers(ParameterSettings* ps)
     }
     
     // parse VTK if file if .vtk
-//    else if(infileInfo.suffix() == QString("vtk"))
-//    {
-//        vtkSmartPointer<vtkPolyDataReader> reader =
-//            vtkSmartPointer<vtkPolyDataReader>::New();
-//        reader->SetFileName(ps->inputFile.c_str());
-//        reader->Update();
-//        polydata = static_cast<vtkPolyData*>(reader->GetOutput());
-//    }
+   // else if(fn.substr(fn.find_last_of(".") + 1) == "fib")
+   // {
+   //     printf("Loading as VTK format\n");
+   //     vtkSmartPointer<vtkPolyDataReader> reader =
+   //         vtkSmartPointer<vtkPolyDataReader>::New();
+   //     reader->SetFileName(ps->inputFile.c_str());
+   //     reader->Update();
+   //     polydata = reader->GetOutput();
+   // }
     
     // unknown format, abort
     else
@@ -69,7 +70,7 @@ void SpuriousFibers(ParameterSettings* ps)
         return;
     }
     
-    //polydata->Print(std::cout);
+    polydata->Print(std::cout);
     
     // Fiber length filter
     vtkFiberLengthFilter* lengthFilter;
@@ -125,11 +126,10 @@ void SpuriousFibers(ParameterSettings* ps)
         splineFilter->Update();
         printf("Fiber subsampling complete.\n");
         
-        //splineFilter->GetOutput()->Print(std::cout);
+        splineFilter->GetOutput()->Print(std::cout);
     }
     
     // check if there are any fibers remaining, otherwise abort
-    
     
     // Spurious fiber filter
     vtkFiberSpuriousFilter* scoringFilter = vtkFiberSpuriousFilter::New();
@@ -157,33 +157,33 @@ void SpuriousFibers(ParameterSettings* ps)
     printf("Results written to %s.\n",ps->outputFile.c_str());
 
 	// Write scalars to text file
-	//if(!ps->outputScalarsFile.empty())
-	//{
-	/*ofstream outputFile;
-	outputFile.open(ps->outputScalarsFile);
-
-	int numberOfCells = outdata->GetNumberOfCells();
-
-	for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
-		{
-		    // Get the data of the current fiber
-		    vtkCell * currentCell = input->GetCell(lineId);
-		    int numberOfFiberPoints = currentCell->GetNumberOfPoints();
-			double scalarValue = 
-
-		    // Loop through all points in the fiber
-			for (int pointId = 0; pointId < numberOfFiberPoints; ++pointId)
-			{
-	outputFile << 
-	}
-	}
-
-	outputFile.close();*/
-
-	//vtkArrayWriter* writer2 = vtkArrayWriter::New();
-	//writer2->Write(outdata->GetPointData()->GetArray("SMScalars"), ps->outputScalarsFile.c_str());
-	
-	//}
+//	if(!ps->outputScalarsFile.empty())
+//	{
+//        ofstream outputFile;
+//        outputFile.open(ps->outputScalarsFile);
+//
+//        int numberOfCells = outdata->GetNumberOfCells();
+//
+//        for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
+//        {
+//            // Get the data of the current fiber
+//            vtkCell * currentCell = outdata->GetCell(lineId);
+//            int numberOfFiberPoints = currentCell->GetNumberOfPoints();
+//            double scalarValue =
+//
+//            // Loop through all points in the fiber
+//            for (int pointId = 0; pointId < numberOfFiberPoints; ++pointId)
+//            {
+//                outputFile <<
+//            }
+//        }
+//
+//        outputFile.close();
+//
+//        //vtkArrayWriter* writer2 = vtkArrayWriter::New();
+//        //writer2->Write(outdata->GetPointData()->GetArray("SMScalars"), ps->outputScalarsFile.c_str());
+//
+//	}
 }
 
 int main(int argc, const char * argv[])

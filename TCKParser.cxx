@@ -7,148 +7,81 @@
 //
 
 #include "TCKParser.h"
+#include <sstream>
 
 vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
 {
     // Create the Qt file handler
     ifstream TCKFile (filename.c_str(), ios::in | ios::binary );
-    
-    // Try to open the input file
-    if (TCKFile.fail())
-    {
-        printf("Could not open file %s!\n",filename.c_str());
-        return NULL;
-    }
 
-    // temp variables
-    char c;
-
-    char endBuffer[] = "AAA";
-    char end[] = "END";
-    for(int i = 0; i<1000; i++)
+    // Read header
+    std::string line;
+    std::string end = "END";
+    std::string fiberCount = "count:";
+    int numfibers;
+    while (std::getline(TCKFile, line))
     {
-        TCKFile.read(reinterpret_cast<char*>(&c), sizeof(char));
-        
-        
-        endBuffer[0] = endBuffer[1];
-        endBuffer[1] = endBuffer[2];
-        endBuffer[2] = c;
-        
-        if(!strcmp(endBuffer,end))
+        //printf("%s\n", line.c_str());
+        if (line.substr(0,6).find(fiberCount) != std::string::npos)
+        {
+            numfibers = std::stoi(line.substr(6));
+            // printf("number of fibers found: %d\n", numfibers);
+        }
+        if(line.compare(end) == 0)
+        {
+            // printf("end found.\n");
             break;
+        }
     }
-    
-    double inf=1.0/0.0;
+
+    // printf("pos:%d\n",(int)TCKFile.tellg());
+
+    TCKFile.seekg((int)TCKFile.tellg()-1);
+
+    // Load fiber data
     std::vector< std::vector<float> > fibersList;
-    
-    int headerPos = TCKFile.tellg();
-    int bugfixer = 0;
-    int MAXTRIES = 200;
-    while(bugfixer < MAXTRIES)
+    fibersList.resize(numfibers);
+    int idx = 0;
+    float f1,f2,f3;
+    TCKFile.read(reinterpret_cast<char*>(&f1), sizeof(float));
+    while(true)
     {
-        TCKFile.seekg(headerPos, TCKFile.beg);
-        
-        for(int i = 0; i<bugfixer; i++)
-        {
-            TCKFile.read(reinterpret_cast<char*>(&c), sizeof(char));
-        }
-        
-        int j = 0;
-        fibersList.clear();
-        
-        int pos;
-        float f;
-        while(true)
-        {
-            pos = TCKFile.tellg();
-            TCKFile.read(reinterpret_cast<char*>(&f), sizeof(float));
-            if(fabs(f) > 0.01)
-                break;
-        }
-        TCKFile.seekg(pos, TCKFile.beg);
-        
-        int k = 0;
-        bool abort;
-        while(true)
-        {
-            //algo->UpdateProgress((double) j);
-            
-            std::vector<float> fiber;
-            
-            float f1,f2,f3;
-            k = 0;
-            abort = false;
-            while(true)
-            {
-                TCKFile.read(reinterpret_cast<char*>(&f1), sizeof(float));
-                TCKFile.read(reinterpret_cast<char*>(&f2), sizeof(float));
-                TCKFile.read(reinterpret_cast<char*>(&f3), sizeof(float));
-                
-                if(f1 != f1 && f2!=f2 && f3!=f3)
-                    break;
-                
-                if(f1 == inf && f2==inf && f3==inf)
-                    break;
-                
-                if(TCKFile.eof())
-                    break;
-                
-                //                f1 += 80;
-                //                f1 *= 0.5;
-                //
-                //                f2 += 120;
-                //                f2 *= 0.5;
-                //
-                //                f3 += 60;
-                //                f3 *= 0.5;
-                
-                fiber.push_back(f1);
-                fiber.push_back(f2);
-                fiber.push_back(f3);
-                
-                k++;
-                
-                if(f1 > 10000 || f2 > 10000 || f3 > 10000)
-                {
-                    abort = true;
-                    break;
-                }
-            }
-            
-            if(abort)
-            {
-                break;
-            }
-            
-            fibersList.push_back(fiber);
-            
-            j++;
-            
-            if(TCKFile.eof())
-                break;
-            
-            if(f1 == inf && f2==inf && f3==inf)
-                break;
-        }
-        
-        if(abort)
-        {
-            printf("Bugfix attempt: %d\n",bugfixer);
-            bugfixer++;
-        }
-        else
+        if(TCKFile.eof())
             break;
-        
+
+        TCKFile.read(reinterpret_cast<char*>(&f1), sizeof(float));
+        TCKFile.read(reinterpret_cast<char*>(&f2), sizeof(float));
+        TCKFile.read(reinterpret_cast<char*>(&f3), sizeof(float));
+
+        // if(isnan(f1) || isnan(f2) || isnan(f3))
+        //     printf("%f %f %f\n", f1,f2,f3);
+
+        if(isnan(f1) && isnan(f2) && isnan(f3))
+        {
+            idx++;
+            // printf("now processing fiber %d\n", idx);
+            continue;
+        }
+
+        if(isinf(f1) && isinf(f2) && isinf(f3))
+        {
+            // printf("end of file reached!\n");
+            break;
+        }
+
+//        std::vector<float> fiber = fibersList.at(idx);
+
+        fibersList[idx].push_back(f1);
+        fibersList[idx].push_back(f2);
+        fibersList[idx].push_back(f3);
     }
-    
-    if(bugfixer == MAXTRIES)
-    {
-        printf("Error loading %s!\n",filename.c_str());
-        return NULL;
-    }
+
+    // close .TCK file
+    TCKFile.close();
+
     
     //
-    //  Transformation
+    //  Transformation (not used)
     //
     
     vtkMatrix4x4 * mat = vtkMatrix4x4::New();
@@ -159,9 +92,6 @@ vtkPolyData* TCKParser::LoadDataFromFile(std::string filename)
     //    transform->Translate(-80,-120,-60);
     //    transform->Scale(2,2,2);
     mat = transform->GetMatrix();
-    
-    // close .TCK file
-    TCKFile.close();
 
     // Create polydata
     vtkPolyData* output = vtkPolyData::New();

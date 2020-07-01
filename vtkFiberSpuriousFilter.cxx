@@ -4,9 +4,9 @@
 #include "vtkFiberSpuriousFilter.h"
 #include <ctime>
 #include <algorithm>
-#ifndef __APPLE__
+//#ifndef __APPLE__
     #include <omp.h>
-#endif
+//#endif
 
 vtkStandardNewMacro(vtkFiberSpuriousFilter);
 
@@ -575,8 +575,12 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
     int totalNumPoints = 0;
     for (vtkIdType lineId = 0; lineId < numberOfCells; ++lineId)
     {
+        //vtkIdList* ids = vtkIdList::New();
+        //inputLines->GetCell(lineId, ids);
+        
         vtkCell * currentCell = input->GetCell(lineId);
         int numberOfFiberPoints = currentCell->GetNumberOfPoints();
+        //int numberOfFiberPoints = ids->GetNumberOfIds();
         fiberNumPoints[lineId] = numberOfFiberPoints;
 
         fiberStartIds[lineId] = totalNumPoints*3;
@@ -666,6 +670,11 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
 
         // Get the data of the current fiber
         int numberOfFiberPoints = fiberNumPoints[lineId];
+        
+        if(numberOfFiberPoints <= ps->windowSize)
+        {
+            continue;
+        }
 
         // Current point coordinates
         int fiberStartId = fiberStartIds[lineId];
@@ -773,8 +782,8 @@ int vtkFiberSpuriousFilter::RequestData(vtkInformation *vtkNotUsed(request),
 		}        
         avgScoreTotal /= numberOfCells;
 
-        if(fiberMinScores != NULL)
-           free(fiberMinScores);
+        //if(fiberMinScores != NULL)
+        //   free(fiberMinScores);
         fiberMinScores = (double*)malloc(numberOfCells*sizeof(double));
         for (int lineId = 0; lineId < numberOfCells; ++lineId)
         {
